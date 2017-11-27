@@ -14,7 +14,7 @@
  *
  */
 definition(
-  name:        "Konnected",
+  name:        "Konnected-lincomatic",
   namespace:   "konnected-io",
   author:      "konnected.io",
   description: "Konnected devices bridge wired things with SmartThings",
@@ -166,7 +166,7 @@ def pageConfiguration() {
   dynamicPage(name: "pageConfiguration") {
     configuredAlarmPanels.each { alarmPanel ->
       section(hideable: true, "konnected-${alarmPanel.mac[-6..-1]}") {
-        for ( i in [1, 2, 5, 6, 7, 8, 9]) {
+        for ( i in 0..31) {
           def deviceTypeDefaultValue = (settings."deviceType_${alarmPanel.mac}_${i}") ? settings."deviceType_${alarmPanel.mac}_${i}" : ""
           def deviceLabelDefaultValue = (settings."deviceLabel_${alarmPanel.mac}_${i}") ? settings."deviceLabel_${alarmPanel.mac}_${i}" : ""
 
@@ -199,8 +199,8 @@ def pageConfiguration() {
 
 private Map pageConfigurationGetDeviceType(Integer i) {
   def deviceTypes = [:]
-  def sensorPins = [1,2,5,6,7,9]
-  def actuatorPins = [1,2,5,6,7,8]
+  def sensorPins = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+  def actuatorPins = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
 
   if (sensorPins.contains(i)) {
     deviceTypes << sensorsMap()
@@ -441,11 +441,8 @@ void syncChildPinState(physicalgraph.device.HubResponse hubResponse) {
 }
 
 private String pinLabel(Integer i) {
-  if (i == 9) {
-    return "RX"
-  } else {
-    return "D$i"
-  }
+  Integer bank = i / 16;
+  return "Bank$bank C$i"
 }
 
 private Map actuatorsMap() {
