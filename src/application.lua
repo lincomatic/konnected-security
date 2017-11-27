@@ -13,18 +13,28 @@ local s0 = 1
 local s1 = 2
 local s2 = 5
 local s3 = 6
+-- bank 0 enable
+local ena0 = 3
+-- bank 1 enable
+local ena1 = 6
 -- adc threshold
 local adcthresh = 300
-
--- hack to ensure pin D8 stays low after boot so it can be used with a high-level trigger relay
-gpio.mode(8, gpio.OUTPUT)
-gpio.write(8, gpio.LOW)
 
 timeout:register(10000, tmr.ALARM_SEMI, node.restart)
 
 --scl
 function readHC4067Pin(pin)
   local state;
+
+--enable is active low
+  if (pin/16 == 0) then
+    gpio.write(ena1,gpio.HIGH);
+    gpio.write(ena0,gpio.LOW);
+  else
+    gpio.write(ena0,gpio.HIGH);
+    gpio.write(ena1,gpio.LOW);
+  end
+
   if (bit.band(pin,1)==1) then o=gpio.HIGH else o=gpio.LOW end
   gpio.write(s0,o)
   if (bit.band(pin,2)==2) then o=gpio.HIGH else o=gpio.LOW end
@@ -43,6 +53,8 @@ gpio.mode(s0,gpio.OUTPUT)
 gpio.mode(s1,gpio.OUTPUT)
 gpio.mode(s2,gpio.OUTPUT)
 gpio.mode(s3,gpio.OUTPUT)	
+gpio.mode(ena0,gpio.OUTPUT)	
+gpio.mode(ena1,gpio.OUTPUT)	
 print("Heap:", node.heap(), "Initializing sensor pins done.")
 --scl 
 
