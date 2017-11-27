@@ -173,7 +173,7 @@ def pageConfiguration() {
           input(
             name: "deviceType_${alarmPanel.mac}_${i}",
             type: "enum",
-            title: "Pin ${pinLabel(i)}",
+            title: "${pinLabel(i)}",
             required: false,
             multiple: false,
             options: pageConfigurationGetDeviceType(i),
@@ -185,7 +185,7 @@ def pageConfiguration() {
             input(
               name: "deviceLabel_${alarmPanel.mac}_${i}",
               type: "text",
-              title: "Pin ${pinLabel(i)} Name",
+              title: "${pinLabel(i)} Name",
               description: "Name the device connected to ${pinLabel(i)}",
               required: (settings."deviceType_${alarmPanel.mac}_${i}" != null),
               defaultValue: deviceLabelDefaultValue
