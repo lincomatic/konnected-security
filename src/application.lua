@@ -7,16 +7,44 @@ local timeout = tmr.create()
 local sensorTimer = tmr.create()
 local sendTimer = tmr.create()
 
+--scl
+-- HC4067 address pins
+local s0 = 1
+local s1 = 2
+local s2 = 5
+local s3 = 6
+-- adc threshold
+local adcthresh = 300
+
 -- hack to ensure pin D8 stays low after boot so it can be used with a high-level trigger relay
 gpio.mode(8, gpio.OUTPUT)
 gpio.write(8, gpio.LOW)
 
 timeout:register(10000, tmr.ALARM_SEMI, node.restart)
 
-for i, sensor in pairs(sensors) do
-  print("Heap:", node.heap(), "Initializing sensor pin:", sensor.pin)
-  gpio.mode(sensor.pin, gpio.INPUT, gpio.PULLUP)
-end
+--scl
+function readHC4067Pin(pin)
+  local state;
+  if (bit.band(pin,1)==1) then o=gpio.HIGH else o=gpio.LOW end
+  gpio.write(s0,o)
+  if (bit.band(pin,2)==2) then o=gpio.HIGH else o=gpio.LOW end
+  gpio.write(s1,o)
+  if (bit.band(pin,4)==4) then o=gpio.HIGH else o=gpio.LOW end
+  gpio.write(s2,o)
+  if (bit.band(pin,8)==8) then o=gpio.HIGH else o=gpio.LOW end
+  gpio.write(s3,o)
+  state = adc.read(0)
+  if (state < adcthresh) then state=0 else state=1 end
+  return state;
+end  
+
+print("Heap:", node.heap(), "Initializing sensor pins...")
+gpio.mode(s0,gpio.OUTPUT)
+gpio.mode(s1,gpio.OUTPUT)
+gpio.mode(s2,gpio.OUTPUT)
+gpio.mode(s3,gpio.OUTPUT)	
+print("Heap:", node.heap(), "Initializing sensor pins done.")
+--scl 
 
 for i, actuator in pairs(actuators) do
   print("Heap:", node.heap(), "Initializing actuator pin:", actuator.pin, "Trigger:", actuator.trigger)
@@ -26,8 +54,9 @@ end
 
 sensorTimer:alarm(200, tmr.ALARM_AUTO, function(t)
   for i, sensor in pairs(sensors) do
-    if sensor.state ~= gpio.read(sensor.pin) then
-      sensor.state = gpio.read(sensor.pin)
+    local state = readHC4067Pin(sensor.pin)
+    if sensor.state ~= state then
+      sensor.state = state
       table.insert(sensorSend, i)
     end
   end
@@ -39,12 +68,12 @@ sendTimer:alarm(200, tmr.ALARM_AUTO, function(t)
     local sensor = sensors[sensorSend[1]]
     timeout:start()
     http.put(
-      table.concat({ smartthings.apiUrl, "/device/", dni, "/", sensor.pin, "/", gpio.read(sensor.pin) }),
+      table.concat({ smartthings.apiUrl, "/device/", dni, "/", sensor.pin, "/", readHC4067Pin(sensor.pin) }),
       table.concat({ "Authorization: Bearer ", smartthings.token, "\r\n" }),
       "",
       function(code)
         timeout:stop()
-        print("Heap:", node.heap(), "HTTP Call:", code, "Pin:", sensor.pin, "State:", gpio.read(sensor.pin))
+        print("Heap:", node.heap(), "HTTP Call:", code, "Pin:", sensor.pin, "State:", readHC4067Pin(sensor.pin))
         table.remove(sensorSend, 1)
         blinktimer:start()
         t:start()

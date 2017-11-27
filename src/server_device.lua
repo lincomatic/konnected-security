@@ -34,7 +34,7 @@ local me = {
         else
           local body = { {
             pin = request.query.pin,
-            state = gpio.read(request.query.pin)
+            state = readHC4067Pin(request.query.pin)
           } }
         end
         response.send(cjson.encode(body))
